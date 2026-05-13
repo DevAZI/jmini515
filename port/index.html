@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>キムジェミン - バックエンド開発者ポートフォリオ</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+    integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+    integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+    integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: #fafaf9;
+      color: #292524;
+      overflow-x: hidden;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .skill-tag {
+      transition: all 0.2s ease;
+    }
+
+    .skill-tag:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      animation: zoomIn 0.3s ease-out;
+    }
+
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .image-placeholder {
+      background: linear-gradient(135deg, #f5f5f4 0%, #e7e5e4 100%);
+      border: 2px dashed #d6d3d1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Router
+    function useRouter() {
+      const [currentView, setCurrentView] = useState({ type: 'home' });
+
+      useEffect(() => {
+        const handleHashChange = () => {
+          const hash = window.location.hash.slice(1);
+          if (hash.startsWith('project/')) {
+            const projectId = parseInt(hash.split('/')[1]);
+            setCurrentView({ type: 'project-detail', projectId });
+          } else {
+            setCurrentView({ type: 'home' });
+          }
+        };
+
+        handleHashChange();
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+      }, []);
+
+      const navigateToProject = (projectId) => {
+        window.location.hash = `project/${projectId}`;
+        window.scrollTo(0, 0);
+      };
+
+      const navigateToHome = () => {
+        window.location.hash = '';
+        window.scrollTo(0, 0);
+      };
+
+      return { currentView, navigateToProject, navigateToHome };
+    }
+
+    // Header Component
+    function Header() {
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [scrolled, setScrolled] = useState(false);
+
+      useEffect(() => {
+        const handleScroll = () => {
+          setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
+
+      const navItems = [
+        { name: 'Profile', href: '#profile' },
+        { name: 'Skills', href: '#skills' },
+        { name: 'Projects', href: '#projects' },
+        { name: 'Education', href: '#education' }
+      ];
+
+      const handleNavClick = (e, href) => {
+        e.preventDefault();
+        setMobileMenuOpen(false);
+        const element = document.querySelector(href);
+        if (element) {
+          const offset = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+        }
+      };
+
+      return (
+        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-stone-50/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'}`}>
+          <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              <div className="text-xl sm:text-2xl font-bold gradient-text">
+                JM.dev
+              </div>
+
+              <div className="hidden md:flex space-x-8">
+                {navItems.map(item => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className="text-stone-700 hover:text-amber-600 transition-colors duration-200 font-medium"
+                  >
+                    {item.name}
+                  </a>
+                ))}
+              </div>
+
+              <button
+                className="md:hidden text-stone-700 hover:text-amber-600 transition-colors"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
+
+            {mobileMenuOpen && (
+              <div className="md:hidden pb-4">
+                {navItems.map(item => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className="block py-3 text-stone-700 hover:text-amber-600 transition-colors duration-200"
+                  >
+                    {item.name}
+                  </a>
+                ))}
+              </div>
+            )}
+          </nav>
+        </header>
+      );
+    }
+
+    // Hero Section
+    function Hero() {
+      return (
+        <section id="profile" className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-16">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="mb-8 fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6">
+                はじめまして,<br />
+                <span className="gradient-text">キムジェミン</span>です
+              </h1>
+            </div>
+
+            <div className="mb-8 sm:mb-12 fade-in-up" style={{ animationDelay: '0.4s', opacity: 0 }}>
+              <p className="text-lg sm:text-xl md:text-2xl text-stone-600 max-w-2xl mx-auto leading-relaxed">
+                ユーザー中心の機能と<br className="sm:hidden" /> チームメンバーとの協力を<br />
+                重視するバックエンドエンジニアです
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8 fade-in-up" style={{ animationDelay: '0.6s', opacity: 0 }}>
+              <a
+                href="https://github.com/DevAZI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-600 to-orange-600 rounded-full text-white font-semibold hover:shadow-lg hover:shadow-amber-600/50 transition-all duration-300 hover:scale-105"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Skills Section
+    function Skills() {
+      const skills = [
+        {
+          category: 'Backend',
+          items: [
+            { name: 'Java', desc: 'Spring Boot (RESTful APIの設計、およびJWTベースの認証・認可の実装が可能)' }
+          ]
+        },
+        {
+          category: 'Frontend',
+          items: [
+            { name: 'React', desc: 'コンポーネントベースのUI開発およびAPI連携' },
+            { name: 'JavaScript', desc: '言語の基本構文の理解および非同期処理' }
+          ]
+        },
+        {
+          category: 'Database',
+          items: [
+            { name: 'MySQL', desc: 'ERDの設計およびSQLクエリの作成' }
+          ]
+        },
+        {
+          category: 'Infra / DevOps',
+          items: [
+            { name: 'AWS', desc: 'EC2インスタンスの管理およびデプロイ' },
+            { name: 'Docker', desc: 'アプリケーションのコンテナ化およびデプロイ経験' }
+          ]
+        },
+        {
+          category: 'AI',
+          items: [
+            { name: 'Claude API', desc: 'プロンプトエンジニアリングおよびAPI統合' }
+          ]
+        }
+      ];
+
+      return (
+        <section id="skills" className="min-h-screen py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto max-w-6xl">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16 gradient-text">
+              Skills
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+              {skills.map((category, idx) => (
+                <div
+                  key={category.category}
+                  className="bg-white backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-stone-200 hover:border-amber-400 transition-all duration-300 shadow-sm hover:shadow-md"
+                  style={{
+                    animation: 'fadeInUp 0.6s ease-out forwards',
+                    animationDelay: `${idx * 0.1}s`,
+                    opacity: 0
+                  }}
+                >
+                  <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-amber-700">
+                    {category.category}
+                  </h3>
+
+                  <div className="space-y-4">
+                    {category.items.map(skill => (
+                      <div key={skill.name} className="group">
+                        <div className="flex items-start gap-3">
+                          <span className="inline-block px-3 py-1 bg-gradient-to-r from-amber-100 to-orange-100 rounded-lg text-sm font-semibold text-amber-800 border border-amber-300 skill-tag">
+                            {skill.name}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm sm:text-base text-stone-600 leading-relaxed">
+                          {skill.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Project data
+    function getProjectData() {
+      return [
+        {
+          id: 0,
+          title: 'AI基盤の2Dゲームボスパターン生成ウェブサービス',
+          period: '2024.03 ~ 2024.11 (4名)',
+          summary: 'AIを活用して2Dプラットフォームゲームのボスパターンを生成し、デモプレイが可能なウェブサービス',
+          keyRole: 'Spring BootバックエンドAPI設計、JWT認証システムの実装',
+          techStack: ['Spring Boot', 'Java', 'JWT', 'GPT', 'Unity'],
+          overview: 'AIを活用して2Dプラットフォームゲームのボスパターンを自動生成し、生成されたパターンをUnity基盤のゲームに使えるサービスです。',
+          problemAndGoal: `[問題]
+ゲーム開発において、ボスパターンのデザインは多くの時間と創造性を必要とします。特にインディーゲームの開発者は、限られたリソースで多様なボスパターンを実装することが困難です。
+
+[目標]
+AI技術を活用して、難易度に応じたバランスの取れたボスパターンを自動生成し、インディーゲーム開発者のコード品質と生産性を向上させることです。`,
+          roles: [
+            'Spring Bootを活用したバックエンドAPIの設計および実装',
+            'AIを活用し、ユーザーが設定した難易度に合わせたボスパターンの実装',
+            'JWTを活用したセキュリティおよびユーザー認証システムの実装'
+          ],
+          troubleShooting: `[問題 1] AIで生成されたボスパターンを適用したコードをWebGLでビルドして実行した際、正常に動作しない問題が発生。
+
+[解決]
+CompressionFormatをDisableに変更し、圧縮フォーマットをGzipに変更することで解決しました。また、Node.js環境では実行できませんでしたが、Spring Boot環境で動作させることで正常に実行できました。
+
+[問題 2] 初のチームプロジェクトにおける設計不足の問題
+全体的なアイデアのみで進行し、詳細な企画を行わなかったため、プロジェクトの開発に想定以上の時間がかかってしまった問題。
+
+[解決]
+チームメンバーと協議し、トラブルが発生した箇所については都度ミーティングを行って意見を交換しました。機能の追加や変更についても、ミーティングを通じて妥当な選択であるかを十分に議論した上で進行しました。`,
+          learnings: 'このプロジェクトを通じて、バックエンド開発者として複数のシステムを統合・連携する貴重な経験を積むことができました。',
+          githubUrl: 'https://github.com/DevAZI/BPM',
+          liveUrl: 'http://devaz.kro.kr:8080',
+          resultImages: [
+            { src: 'img/bpmMain.png', caption: 'メイン画面' },
+            { src: 'img/bpmdemo.png', caption: 'AIで作成されたパターンのデモプレイ画面' },
+            { src: 'img/bpmBoard.png', caption: 'コミュニティ' }
+          ],
+          diagrams: { useCase: null, erd: null, classDiagram: null, architecture: null },
+        },
+        {
+          id: 1,
+          title: 'シニア向けヘルスケア及びコマースウェブプラットフォーム',
+          period: '2026.04 ~ 2026.04 (2名)',
+          summary: 'シニアユーザーのアクセシビリティを考慮したヘルスケアデータ管理、および健康関連商品のコマース統合プラットフォーム',
+          keyRole: 'ERD設計、RESTful API開発、シニア親和的なデータ構造の最適化',
+          techStack: ['React', 'EC2', 'Bedrock', 'Lambda', 'APIGateway'],
+          overview: 'シニアユーザーを対象に、健康データの管理と健康関連商品の購入が可能な統合ウェブプラットフォームです。',
+          problemAndGoal: `[問題]
+シニアユーザーは、複雑なインターフェースや小さな文字により、デジタルサービスの利用や情報収集に困難を抱えています。
+
+[目標]
+シニアユーザーが簡単に利用できるよう、サイズ変更可能な文字と明確なUIを提供し、健康管理とショッピング機能を1つのプラットフォームで提供することです。`,
+          roles: [
+            '記事に関連する商品の推薦、およびAIを活用した現在の健康状態に基づく記事と商品の推薦機能の実装',
+            'Reactフロントエンドと通信するためのRESTful API開発',
+            'シニアユーザーのアクセシビリティを考慮したデータ構造の最適化'
+          ],
+          troubleShooting: `[問題 1] AWS BedrockおよびLambdaの権限管理
+AWSのAIモデルを使用するためにBedrockを導入しようとしましたが、Lambdaでエラーが発生しました。
+
+[解決]
+IAMアカウントにBedrockの権限を付与し、さらにLambdaの実行ロールにBedrockに関する権限を追加することでエラーを解決しました。
+
+[問題 2] GitHub Actionsを用いたCI/CDデプロイの問題
+デプロイの過程で「Permission denied」エラーが発生しました。
+
+[解決]
+リモートサーバーのデプロイ対象ディレクトリ（/home/***/react-app）および配下のファイルの所有者が現在の接続アカウントと異なり、書き込み権限がない状態だったため、所有権を変更して解決しました。`,
+          learnings: '実際のユーザーのニーズを中心にAPIを設計することがいかに重要であるかを学びました。シニアユーザーのためのアクセシビリティの考慮は、バックエンドのデータ構造設計から始めるべきであると気づきました。',
+          githubUrl: 'https://github.com/P2-SHC/SHC',
+          liveUrl: 'http://devaz.kro.kr',
+          resultImages: [
+            { src: "img/shcmain.png", caption: 'メイン画面' },
+            { src: "img/shcboard.png", caption: '健康情報' },
+            { src: "img/shcshop.png", caption: '商品情報' },
+            { src: "img/shcshopdetail.png", caption: '商品詳細' },
+            { src: "img/shcregister.png", caption: '会員登録' },
+            { src: "img/shcalarm.png", caption: '健康アラーム' },
+            { src: "img/shcitem.png", caption: 'AI健康管理' },
+            { src: "img/shcai.png", caption: 'AI診断' }
+          ],
+          diagrams: { useCase: null, architecture: null },
+        },
+        {
+          id: 2,
+          title: 'コンソール基盤テキストRPG (Text TRPG)',
+          period: '2026.02 ~ 2026.03 (4名)',
+          summary: 'Javaオブジェクト指向プログラミングのコア概念を活用したコンソール基盤のロールプレイングゲーム',
+          keyRole: 'OOP設計、デザインパターンの適用、ゲームシステムの実装',
+          techStack: ['Java', 'OOP', 'MySQL', 'AWSS3'],
+          overview: 'Javaのオブジェクト指向プログラミングの原則を忠実に適用して開発したテキスト基盤のRPGゲームです。',
+          problemAndGoal: `[問題]
+Javaの基礎とオブジェクト指向設計の能力を経験したいと考えましたが、単純なCRUDプロジェクトでは複雑なドメインロジックを扱うことが困難でした。
+
+[目標]
+ゲームという複雑なドメインを通じて、継承、多態性、インターフェースなどOOPのコア概念を適用しました。`,
+          roles: [
+            '継承、多態性、インターフェースを活用したモンスター、スキル、ショップ、クエストシステムの設計',
+            'MySQLデータベースの設計およびクエリ作成',
+            '戦闘、インベントリ、ショップ利用などのゲームメカニズムの実装'
+          ],
+          troubleShooting: `[問題 1] キャラクターが削除されない問題
+
+[解決]
+キャラクターのテーブルが他のテーブルと外部キーで関連付けられており、キャラクター削除時にエラーが発生する問題を解決するため、関連するテーブルを確認し、キャラクターを削除する際に外部キーで関連付けられたテーブルのデータも一緒に削除されるように修正。
+
+[問題 2] ログイン時のエラー発生問題
+ログインを行う際、ログインに失敗したにもかかわらずキャラクター作成ロジックに遷移してしまう問題が発生。
+
+[解決]
+キャラクターのテーブルが他のテーブルと外部キーで関連付けられており、キャラクター削除時にエラーが発生する問題を解決するため、関連するテーブルを確認し、キャラクターを削除する際に外部キーで関連付けられたテーブルのデータも一緒に削除されるように修正。`,
+          learnings: 'このプロジェクトは、私にオブジェクト指向プログラミングの真の価値を気づかせてくれた貴重な経験となりました。MVCパターンを実際に適用することで、コードをより効率的に作成することができました。',
+          githubUrl: 'https://github.com/kosta-dev-sjh/p1-4g-java-console',
+          resultImages: [
+            { src: "img/trpgmain.png", caption: 'ゲーム開始画面' },
+            { src: "img/trpgmainmain.png", caption: 'メイン画面' },
+            { src: "img/trpgshop.png", caption: 'ショップ画面' },
+            { src: "img/trpgbattle.png", caption: '戦闘画面' },
+            { src: "img/trpgbattleing.png", caption: '戦闘中画面' },
+          ],
+          diagrams: { useCase: null, erd: null, classDiagram: null, architecture: null },
+        }
+      ];
+    }
+
+    // Projects Section
+    function Projects({ onViewDetail }) {
+      const projects = getProjectData();
+
+      return (
+        <section id="projects" className="min-h-screen py-16 sm:py-20 px-4 sm:px-6 lg:px-8 bg-stone-100">
+          <div className="container mx-auto max-w-7xl">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16 gradient-text">
+              Projects
+            </h2>
+
+            <div className="max-w-4xl mx-auto space-y-6">
+              {projects.map((project, idx) => (
+                <div
+                  key={project.id}
+                  className="bg-white backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-stone-200 hover:border-amber-400 transition-all duration-300 shadow-sm hover:shadow-md"
+                  style={{
+                    animation: 'fadeInUp 0.6s ease-out forwards',
+                    animationDelay: `${idx * 0.1}s`,
+                    opacity: 0
+                  }}
+                >
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-3 text-stone-900">
+                    {project.title}
+                  </h3>
+
+                  <p className="text-amber-700 text-sm sm:text-base mb-4 font-semibold">
+                    {project.period}
+                  </p>
+
+                  <p className="text-base sm:text-lg text-stone-700 mb-6 leading-relaxed">
+                    {project.summary}
+                  </p>
+
+                  <div className="mb-6">
+                    <h4 className="text-sm font-bold text-stone-600 mb-2">使用技術</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {project.techStack.map(tech => (
+                        <span
+                          key={tech}
+                          className="px-3 py-1 text-xs sm:text-sm bg-stone-100 rounded-full text-stone-700 border border-stone-300"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <h4 className="text-sm font-bold text-stone-600 mb-2">主な担当</h4>
+                    <p className="text-sm sm:text-base text-stone-700">
+                      {project.keyRole}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => onViewDetail(project.id)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  >
+                    詳細を見る
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Project Detail Page
+    function ProjectDetailPage({ project, onBack }) {
+      const [selectedImage, setSelectedImage] = useState(null);
+      const [activeDiagram, setActiveDiagram] = useState(0);
+      const [activeCaptureIdx, setActiveCaptureIdx] = useState(0);
+
+      const diagramTabs = [
+        { key: 'useCase', label: 'Use Case Diagram' },
+        { key: 'erd', label: 'ERD' },
+        { key: 'classDiagram', label: 'クラス図' },
+        { key: 'architecture', label: 'アーキテクチャ図' },
+      ];
+
+      const ImgPlaceholder = ({ caption, heightClass }) => (
+        <div className={`image-placeholder rounded-xl ${heightClass || 'h-48'} flex-col gap-2`}>
+          <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-stone-400 text-sm">{caption || '画像準備中'}</span>
+        </div>
+      );
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (!selectedImage) return;
+          if (e.key === 'ArrowRight') handleModalNav(1);
+          if (e.key === 'ArrowLeft') handleModalNav(-1);
+          if (e.key === 'Escape') setSelectedImage(null);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [selectedImage]);
+
+      const handleModalNav = (direction) => {
+        if (!selectedImage) return;
+        const { images, index } = selectedImage;
+        const nextIndex = (index + direction + images.length) % images.length;
+        setSelectedImage({ images, index: nextIndex });
+      };
+
+      return (
+        <div className="min-h-screen bg-stone-50">
+          <div className="bg-white border-b border-stone-200 sticky top-0 z-40">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <button
+                onClick={onBack}
+                className="flex items-center gap-2 text-amber-700 hover:text-amber-800 font-semibold transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                プロジェクト一覧に戻る
+              </button>
+            </div>
+          </div>
+
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 max-w-5xl">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-stone-900">
+              {project.title}
+            </h1>
+            <p className="text-amber-700 text-lg mb-12">{project.period}</p>
+
+            {/* 1. プロジェクト概要 */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">1. プロジェクト概要</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <p className="text-base sm:text-lg text-stone-700 leading-relaxed">
+                  {project.overview}
+                </p>
+              </div>
+            </section>
+
+            {/* 2. 問題定義と目標 */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">2. 問題定義と目標</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <p className="text-base sm:text-lg text-stone-700 leading-relaxed whitespace-pre-line">
+                  {project.problemAndGoal}
+                </p>
+              </div>
+            </section>
+
+            {/* 3. 主な担当 */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">3. 主な担当</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <ul className="space-y-3">
+                  {project.roles.map((role, idx) => (
+                    <li key={idx} className="text-base sm:text-lg text-stone-700 flex items-start gap-3">
+                      <span className="text-amber-600 mt-1.5 text-xl">•</span>
+                      <span className="leading-relaxed">{role}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+
+            {/* 4. 使用技術 */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">4. 使用技術</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <div className="flex flex-wrap gap-3">
+                  {project.techStack.map(tech => (
+                    <span
+                      key={tech}
+                      className="px-4 py-2 text-sm bg-amber-100 rounded-lg text-amber-800 border border-amber-300 font-medium skill-tag"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* 5. 結果画面キャロセル */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">5. 結果画面</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                {(() => {
+                  const images = project.resultImages || [];
+                  if (images.length === 0) return <ImgPlaceholder caption="이미지 준비 중" heightClass="h-72" />;
+                  const current = images[activeCaptureIdx] || images[0];
+                  return (
+                    <div>
+                      <div className="relative">
+                        {current.src ? (
+                          <div
+                            className="group cursor-pointer relative overflow-hidden rounded-xl border border-stone-200"
+                            onClick={() => setSelectedImage({ images, index: activeCaptureIdx })}
+                          >
+                            <img
+                              src={current.src}
+                              alt={current.caption}
+                              className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                              <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm font-semibold bg-black/50 px-3 py-1 rounded-full">
+                                拡大
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <ImgPlaceholder caption={current.caption} heightClass="h-72" />
+                        )}
+                        {images.length > 1 && (
+                          <>
+                            <button
+                              onClick={() => setActiveCaptureIdx(i => (i - 1 + images.length) % images.length)}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white rounded-full shadow-md flex items-center justify-center text-stone-700 hover:text-amber-700 transition-colors"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setActiveCaptureIdx(i => (i + 1) % images.length)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white rounded-full shadow-md flex items-center justify-center text-stone-700 hover:text-amber-700 transition-colors"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      {current.caption && (
+                        <p className="mt-3 text-sm text-stone-500 text-center">{current.caption}</p>
+                      )}
+                      {images.length > 1 && (
+                        <div className="flex justify-center gap-2 mt-4">
+                          {images.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setActiveCaptureIdx(i)}
+                              className={`w-2 h-2 rounded-full transition-colors ${i === activeCaptureIdx ? 'bg-amber-600' : 'bg-stone-300 hover:bg-stone-400'}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </section>
+
+            {/* 6. 설계 다이어그램 */}
+            {project.diagrams && Object.values(project.diagrams).some(v => v !== null) && (
+              <section className="mb-12">
+                <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">6.　設計図</h2>
+                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+                  <div className="flex border-b border-stone-200 overflow-x-auto">
+                    {diagramTabs.map((tab, idx) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setActiveDiagram(idx)}
+                        className={`px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${activeDiagram === idx
+                          ? 'text-amber-700 border-b-2 border-amber-600 bg-amber-50'
+                          : 'text-stone-500 hover:text-amber-600 hover:bg-stone-50'
+                          }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="p-6 sm:p-8">
+                    {project.diagrams && project.diagrams[diagramTabs[activeDiagram].key] ? (
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const availableDiagrams = diagramTabs
+                            .map(tab => ({ src: project.diagrams[tab.key], caption: tab.label }))
+                            .filter(d => d.src);
+                          const currentIndex = availableDiagrams.findIndex(d => d.caption === diagramTabs[activeDiagram].label);
+                          setSelectedImage({ images: availableDiagrams, index: currentIndex >= 0 ? currentIndex : 0 });
+                        }}
+                      >
+                        <img
+                          src={project.diagrams[diagramTabs[activeDiagram].key]}
+                          alt={diagramTabs[activeDiagram].label}
+                          className="w-full rounded-xl border border-stone-200 hover:shadow-lg transition-shadow"
+                        />
+                      </div>
+                    ) : (
+                      <div className="image-placeholder rounded-xl h-64 flex-col gap-2">
+                        <svg className="w-12 h-12 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                        </svg>
+                        <span className="text-stone-400 text-sm">{diagramTabs[activeDiagram].label} 준비 중</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* 7. Trouble Shooting */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">6. Trouble Shooting</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <p className="text-base sm:text-lg text-stone-700 leading-relaxed whitespace-pre-line">
+                  {project.troubleShooting}
+                </p>
+              </div>
+            </section>
+
+            {/* 8. 学んだこと */}
+            <section className="mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-amber-700 mb-4">7. 学んだこと</h2>
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-stone-200">
+                <p className="text-base sm:text-lg text-stone-700 leading-relaxed whitespace-pre-line">
+                  {project.learnings}
+                </p>
+              </div>
+            </section>
+
+            <div className="flex flex-wrap justify-center gap-4">
+              <a
+                href={project.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-stone-800 rounded-lg text-white font-semibold hover:bg-stone-900 transition-all duration-300 hover:scale-105 text-lg shadow-lg"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                GitHub
+              </a>
+
+              {project.liveUrl && (
+                <a
+                  href={project.liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg text-white font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105 text-lg shadow-amber-600/20"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  サイトへ移動
+                </a>
+              )}
+            </div>
+          </div>
+
+          {selectedImage && (
+            <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
+              <div className="modal-content flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center text-stone-600 hover:text-stone-900 transition-all hover:scale-110 z-50"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                <div className="relative group">
+                  <img
+                    src={selectedImage.images[selectedImage.index].src}
+                    alt={selectedImage.images[selectedImage.index].caption}
+                    className="max-w-full max-h-[80vh] rounded-xl shadow-2xl"
+                  />
+
+                  {selectedImage.images.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleModalNav(-1); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-white hover:text-amber-700 transition-all duration-300 opacity-0 group-hover:opacity-100 transform -translate-x-4 group-hover:translate-x-0"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleModalNav(1); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/90 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-white hover:text-amber-700 transition-all duration-300 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {selectedImage.images[selectedImage.index].caption && (
+                  <div className="mt-4 px-6 py-2 bg-black/50 backdrop-blur-sm rounded-full">
+                    <p className="text-white text-center text-base font-medium">
+                      {selectedImage.images[selectedImage.index].caption}
+                    </p>
+                  </div>
+                )}
+
+                {selectedImage.images.length > 1 && (
+                  <div className="mt-4 flex gap-2">
+                    {selectedImage.images.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${i === selectedImage.index ? 'bg-amber-500 w-6' : 'bg-white/30'}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Education Section
+    function Education() {
+      return (
+        <section id="education" className="min-h-screen py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto max-w-4xl">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-12 sm:mb-16 gradient-text">
+              Education
+            </h2>
+
+            <div className="space-y-6">
+              <div
+                className="bg-white backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-stone-200 hover:border-amber-400 transition-all duration-300 shadow-sm hover:shadow-md"
+                style={{
+                  animation: 'fadeInUp 0.6s ease-out forwards',
+                  animationDelay: '0.1s',
+                  opacity: 0
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <h3 className="text-xl sm:text-2xl font-bold text-stone-900 mb-2 sm:mb-0">
+                    韓神大学 コンピュータ工学部 (韓国)
+                  </h3>
+                  <span className="text-amber-700 font-semibold">卒業</span>
+                </div>
+                <p className="text-stone-600">2019.03 ~ 2025.08</p>
+              </div>
+
+              <div
+                className="bg-white backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-stone-200 hover:border-amber-400 transition-all duration-300 shadow-sm hover:shadow-md"
+                style={{
+                  animation: 'fadeInUp 0.6s ease-out forwards',
+                  animationDelay: '0.2s',
+                  opacity: 0
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <h3 className="text-xl sm:text-2xl font-bold text-stone-900 mb-2 sm:mb-0">
+                    Java DevOps開発者養成コース
+                  </h3>
+                  <span className="text-amber-700 font-semibold">受講中</span>
+                </div>
+                <p className="text-stone-600">韓国ソフトウェア技術振興協会</p>
+                <p className="text-stone-600 text-sm mt-1">2026.02 ~ 2026.07 (6ヶ月)</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Footer
+    function Footer() {
+      return (
+        <footer className="py-8 px-4 border-t border-stone-300 bg-white">
+          <div className="container mx-auto text-center text-stone-500 text-sm">
+            <p>© 2026 キムジェミン. All rights reserved.</p>
+            <p className="mt-2">Built with React & Tailwind CSS</p>
+          </div>
+        </footer>
+      );
+    }
+
+    // Main App
+    function App() {
+      const { currentView, navigateToProject, navigateToHome } = useRouter();
+      const projects = getProjectData();
+
+      if (currentView.type === 'project-detail') {
+        const project = projects.find(p => p.id === currentView.projectId);
+        if (!project) {
+          navigateToHome();
+          return null;
+        }
+        return <ProjectDetailPage project={project} onBack={navigateToHome} />;
+      }
+
+      return (
+        <div>
+          <Header />
+          <Hero />
+          <Skills />
+          <Projects onViewDetail={navigateToProject} />
+          <Education />
+          <Footer />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>
